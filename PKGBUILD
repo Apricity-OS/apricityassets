@@ -2,7 +2,7 @@
 
 _pkgname='Apricity Assets'
 pkgname=apricityassets
-pkgver=0.1.66
+pkgver=0.2.4
 pkgrel=1
 pkgdesc='Assets for Apricity OS'
 arch=(any)
@@ -25,6 +25,7 @@ package() {
 	mkdir -p "${pkgdir}/etc/skel/.config/autostart"
 	mkdir -p "${pkgdir}/etc/gdm"
 	mkdir -p "${pkgdir}/etc/sudoers.d"
+	chmod 750 -R "${pkgdir}/etc/sudoers.d"
 	cp -f "${srcdir}/apricityassets/firstrun.sh" "${pkgdir}/etc/skel/.config/autostart"
 	cp -f "${srcdir}/apricityassets/firstrun.desktop" "${pkgdir}/etc/skel/.config/autostart"
 	cp -f "${srcdir}/apricityassets/g_wheel" "${pkgdir}/etc/sudoers.d"

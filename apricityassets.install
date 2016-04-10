@@ -1,7 +1,7 @@
 post_install(){
 kwriteconfig --file kdeglobals --group General --key widgetStyle gtk && kwriteconfig --file kdeglobals --group Icons --key Theme Human
-chown -R root /etc/apricity-assets
-chmod -R 755 /etc/apricity-assets
+#chown -R root /etc/apricity-assets
+#chmod -R 755 /etc/apricity-assets
 }
 
 post_remove(){
@@ -22,6 +22,6 @@ rm /etc/skel/.config/autostart/firstrun.desktop
 
 post_upgrade(){
 kwriteconfig --file kdeglobals --group General --key widgetStyle gtk && kwriteconfig --file kdeglobals --group Icons --key Theme Human
-chown -R root /etc/apricity-assets
-chmod -R 755 /etc/apricity-assets
+#chown -R root /etc/apricity-assets
+#chmod -R 755 /etc/apricity-assets
 }

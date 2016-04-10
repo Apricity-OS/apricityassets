@@ -8,7 +8,8 @@
     "3.12", 
     "3.14", 
     "3.16",
-    "3.18"
+    "3.18",
+    "3.20"
   ], 
   "url": "http://github.com/jamienicol/gnome-shell-extension-always-zoom-workspaces", 
   "uuid": "alwayszoomworkspaces@jamie.thenicols.net", 

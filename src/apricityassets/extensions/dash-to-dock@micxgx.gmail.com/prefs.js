@@ -20,6 +20,39 @@ const Convenience = Me.imports.convenience;
 const SCALE_UPDATE_TIMEOUT = 500;
 const DEFAULT_ICONS_SIZES = [ 128, 96, 64, 48, 32, 24, 16 ];
 
+/*
+This function was copied from the activities-config extension
+https://github.com/nls1729/acme-code/tree/master/activities-config
+by Norman L. Smith.
+*/
+function cssHexString(css) {
+    let rrggbb = '#';
+    let start;
+    for(let loop = 0; loop < 3; loop++) {
+        let end = 0;
+        let xx = '';
+        for(let loop = 0; loop < 2; loop++) {
+            while(true) {
+                let x = css.slice(end, end + 1);
+                if(x == '(' || x == ',' || x == ')')
+                    break;
+                end = end + 1;
+            }
+            if(loop == 0) {
+                end = end + 1;
+                start = end;
+            }
+        }
+        xx = parseInt(css.slice(start, end)).toString(16);
+        if(xx.length == 1)
+            xx = '0' + xx;
+        rrggbb = rrggbb + xx;
+        css = css.slice(end);
+    }
+    return rrggbb;
+}
+
+
 const Settings = new Lang.Class({
     Name: 'DashToDockSettings',
 
@@ -124,6 +157,10 @@ const Settings = new Lang.Class({
                             this._builder.get_object('autohide_switch'),
                             'active',
                             Gio.SettingsBindFlags.DEFAULT);
+        this._settings.bind('autohide-in-fullscreen',
+                            this._builder.get_object('autohide_enable_in_fullscreen_checkbutton'),
+                            'active',
+                            Gio.SettingsBindFlags.DEFAULT);
         this._settings.bind('require-pressure-to-show',
                             this._builder.get_object('require_pressure_checkbutton'),
                             'active',
@@ -186,6 +223,11 @@ const Settings = new Lang.Class({
                             'sensitive',
                             Gio.SettingsBindFlags.GET);
 
+            this._settings.bind('autohide',
+                            this._builder.get_object('autohide_enable_in_fullscreen_checkbutton'),
+                            'sensitive',
+                            Gio.SettingsBindFlags.GET);
+
             this._settings.bind('require-pressure-to-show',
                                 this._builder.get_object('show_timeout_spinbutton'),
                                 'sensitive',
@@ -206,8 +248,8 @@ const Settings = new Lang.Class({
             dialog.connect('response', Lang.bind(this, function(dialog, id) {
                 if (id == 1) {
                     // restore default settings for the relevant keys
-                    let keys = ['intellihide', 'autohide', 'intellihide-mode', 'require-pressure-to-show',
-                                'animation-time', 'show-delay', 'hide-delay'];
+                    let keys = ['intellihide', 'autohide', 'intellihide-mode', 'autohide-in-fullscreen', 'require-pressure-to-show',
+                                'animation-time', 'show-delay', 'hide-delay', 'pressure-threshold'];
                     keys.forEach(function(val){
                         this._settings.set_value(val, this._settings.get_default_value(val));
                     }, this);
@@ -288,7 +330,7 @@ const Settings = new Lang.Class({
                 this._settings.set_enum('click-action', widget.get_active());
         }));
 
-        this._builder.get_object('shift_click_action_combo').set_active(this._settings.get_boolean('minimize-shift')?0:1);
+        this._builder.get_object('shift_click_action_combo').set_active(this._settings.get_boolean('minimize-shift')?1:0);
 
         this._builder.get_object('shift_click_action_combo').connect('changed', Lang.bind (this, function(widget) {
                 this._settings.set_boolean('minimize-shift', widget.get_active()==1);
@@ -301,7 +343,73 @@ const Settings = new Lang.Class({
         this._settings.bind('apply-custom-theme', this._builder.get_object('customize_theme'), 'sensitive', Gio.SettingsBindFlags.INVERT_BOOLEAN | Gio.SettingsBindFlags.GET);
         this._settings.bind('apply-custom-theme', this._builder.get_object('builtin_theme_switch'), 'active', Gio.SettingsBindFlags.DEFAULT);
         this._settings.bind('custom-theme-shrink', this._builder.get_object('shrink_dash_switch'), 'active', Gio.SettingsBindFlags.DEFAULT);
-        this._settings.bind('custom-theme-running-dots', this._builder.get_object('running_dots_switch'), 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        this._settings.bind('custom-theme-running-dots',
+                             this._builder.get_object('running_dots_switch'),
+                             'active',
+                             Gio.SettingsBindFlags.DEFAULT);
+        this._settings.bind('custom-theme-running-dots',
+                            this._builder.get_object('running_dots_advance_settings_button'),
+                            'sensitive',
+                            Gio.SettingsBindFlags.DEFAULT);
+
+        // Create dialog for running dots advanced settings
+        this._builder.get_object('running_dots_advance_settings_button').connect('clicked', Lang.bind(this, function() {
+
+            let dialog = new Gtk.Dialog({ title: _("Customize running indicators"),
+                                          transient_for: this.widget.get_toplevel(),
+                                          use_header_bar: true,
+                                          modal: true });
+
+            let box = this._builder.get_object('running_dots_advance_settings_box');
+            dialog.get_content_area().add(box);
+
+            this._settings.bind('custom-theme-customize-running-dots',
+                                this._builder.get_object('dot_style_switch'),
+                                'active',
+                                Gio.SettingsBindFlags.DEFAULT);
+            this._settings.bind('custom-theme-customize-running-dots',
+                                this._builder.get_object('dot_style_settings_box'),
+                                'sensitive', Gio.SettingsBindFlags.DEFAULT);
+
+            let rgba = new Gdk.RGBA();
+            rgba.parse(this._settings.get_string('custom-theme-running-dots-color'));
+            this._builder.get_object('dot_color_colorbutton').set_rgba(rgba);
+
+            this._builder.get_object('dot_color_colorbutton').connect('notify::color', Lang.bind(this, function(button) {
+                let rgba = button.get_rgba();
+                let css = rgba.to_string();
+                let hexString = cssHexString(css);
+                this._settings.set_string('custom-theme-running-dots-color', hexString);
+            }));
+
+            rgba.parse(this._settings.get_string('custom-theme-running-dots-border-color'));
+            this._builder.get_object('dot_border_color_colorbutton').set_rgba(rgba);
+
+            this._builder.get_object('dot_border_color_colorbutton').connect('notify::color', Lang.bind(this, function(button) {
+                let rgba = button.get_rgba();
+                let css = rgba.to_string();
+                let hexString = cssHexString(css);
+                this._settings.set_string('custom-theme-running-dots-border-color', hexString);
+            }));
+
+            this._settings.bind('custom-theme-running-dots-border-width',
+                                this._builder.get_object('dot_border_width_spin_button'),
+                                'value',
+                                Gio.SettingsBindFlags.DEFAULT);
+
+
+            dialog.connect('response', Lang.bind(this, function(dialog, id) {
+                // remove the settings box so it doesn't get destroyed;
+                dialog.get_content_area().remove(box);
+                dialog.destroy();
+                return;
+            }));
+
+            dialog.show_all();
+
+        }));
+
         this._settings.bind('opaque-background', this._builder.get_object('customize_opacity_switch'), 'active', Gio.SettingsBindFlags.DEFAULT);
         this._builder.get_object('custom_opacity_scale').set_value(this._settings.get_double('background-opacity'));
         this._settings.bind('opaque-background', this._builder.get_object('custom_opacity'), 'sensitive', Gio.SettingsBindFlags.DEFAULT);

@@ -2,9 +2,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnome-shell-extension-caffeine\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-11-07 10:01+0100\n"
-"PO-Revision-Date: 2014-11-07 10:01+0100\n"
-"Last-Translator: Jean-Philippe Braun <eon@patapon.info>\n"
+"POT-Creation-Date: 2016-04-10 12:00-0500\n"
+"PO-Revision-Date: 2015-11-28 21:06-0300\n"
+"Last-Translator: Cristian Beroiza <cberoiza@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
@@ -14,44 +14,85 @@ msgstr ""
 "X-Poedit-Basepath: .\n"
 "Plural-Forms: nplurals=2; plural=(n>1);\n"
 "X-Poedit-SourceCharset: UTF-8\n"
-"X-Generator: Poedit 1.6.10\n"
+"X-Generator: Poedit 1.8.6\n"
 "X-Poedit-SearchPath-0: ../../..\n"
 
-#: ../../../extension.js:271
+#: extension.js:220
 msgid "Auto suspend and screensaver disabled"
-msgstr ""
+msgstr "Deshabilitar auto suspensión y salvapantallas"
 
-#: ../../../extension.js:291
+#: extension.js:239
 msgid "Auto suspend and screensaver enabled"
-msgstr ""
+msgstr "Habilitar auto suspensión y salvapantallas"
 
-#: ../../../prefs.js:45
+#: prefs.js:46
 msgid "Show Caffeine in top panel"
 msgstr "Mostrar Caffeine en el panel superior"
 
-#: ../../../prefs.js:62
+#: prefs.js:63 schemas/org.gnome.shell.extensions.caffeine.gschema.xml:31
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:32
 msgid "Enable when a fullscreen application is running"
+msgstr "Activar cuando una aplicación a pantalla completa esté en ejecución"
+
+#: prefs.js:80
+msgid "Restore state across reboots"
 msgstr ""
 
-#: ../../../prefs.js:79
+#: prefs.js:96
 msgid "Enable notifications"
 msgstr "Activar las notificaciones"
 
-#: ../../../prefs.js:100
+#: prefs.js:117
 msgid "Applications which enable Caffeine automatically"
 msgstr "Aplicaciones que activan Caffeine automáticamente"
 
-#: ../../../prefs.js:116
+#: prefs.js:133
 msgid "Add application"
 msgstr "Agregar aplicación"
 
-#: ../../../prefs.js:130
+#: prefs.js:147
 msgid "Create new matching rule"
 msgstr "Crear nueva regla"
 
-#: ../../../prefs.js:134
+#: prefs.js:151
 msgid "Add"
 msgstr "Agregar"
+
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:6
+#, fuzzy
+msgid "Application list"
+msgstr "Agregar aplicación"
+
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:7
+msgid ""
+"A list of strings, each containing an application id (desktop file name)"
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:11
+msgid "Store caffeine user state"
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:16
+msgid "Restore caffeine state"
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:21
+msgid "Show indicator"
+msgstr ""
+
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:22
+#, fuzzy
+msgid "Show the indicator on the top panel"
+msgstr "Mostrar Caffeine en el panel superior"
+
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:26
+#, fuzzy
+msgid "Show notifications"
+msgstr "Activar las notificaciones"
+
+#: schemas/org.gnome.shell.extensions.caffeine.gschema.xml:27
+msgid "Show notifications when enabled/disabled"
+msgstr ""
 
 #~ msgid "Caffeine enabled"
 #~ msgstr "Caffeine activado"

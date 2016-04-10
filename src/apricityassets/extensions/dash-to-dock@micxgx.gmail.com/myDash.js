@@ -88,7 +88,7 @@ const myAppIconMenu = new Lang.Class({
             if (count == 1)
                 quitFromDashMenuText = _("Quit");
             else
-                quitFromDashMenuText = _("Quit " + count + " Windows");
+                quitFromDashMenuText = _("Quit") + ' ' + count + ' ' + _("Windows");
 
             this._quitfromDashMenuItem = this._appendMenuItem(quitFromDashMenuText);
             this._quitfromDashMenuItem.connect('activate', Lang.bind(this, function() {
@@ -201,7 +201,7 @@ const myShowAppsIconMenu = new Lang.Class({
     _redisplay: function() {
         this.removeAll();
 
-        let item = this._appendMenuItem(_("Dash to Dock Settings"));
+        let item = this._appendMenuItem("Dash to Dock " + _("Settings"));
 
         item.connect('activate', function () {
             Util.spawn(["gnome-shell-extension-prefs", Me.metadata.uuid]);
@@ -551,6 +551,25 @@ const myDash = new Lang.Class({
 
     _onScrollEvent: function(actor, event) {
 
+        // If scroll is not used because the icon is resized, let the scroll event propagate.
+        if (!this._dtdSettings.get_boolean('icon-size-fixed'))
+          return Clutter.EVENT_PROPAGATE;
+
+        // Event coordinates are relative to the stage but can be transformed
+        // as the actor will only receive events within his bounds.
+        let stage_x, stage_y, ok, event_x, event_y, actor_w, actor_h;
+        [stage_x, stage_y] = event.get_coords();
+        [ok, event_x, event_y] = actor.transform_stage_point(stage_x, stage_y);
+        [actor_w, actor_h] = actor.get_size();
+
+        // If the scroll event is within a 1px margin from
+        // the relevant edge of the actor, let the event propagate.
+        if ((this._position == St.Side.LEFT && event_x <= 1)
+            || (this._position == St.Side.RIGHT && event_x >= actor_w - 2)
+            || (this._position == St.Side.TOP && event_y <= 1)
+            || (this._position == St.Side.BOTTOM && event_y >= actor_h - 2))
+            return Clutter.EVENT_PROPAGATE;
+            
         // reset timeout to avid conflicts with the mousehover event
         if (this._ensureAppIconVisibilityTimeoutId>0) {
             Mainloop.source_remove(this._ensureAppIconVisibilityTimeoutId);
@@ -561,20 +580,12 @@ const myDash = new Lang.Class({
         if (event.is_pointer_emulated())
             return Clutter.EVENT_STOP;
 
-        let adjustment, delta, needscroll;
+        let adjustment, delta;
 
-        if (this._isHorizontal) {
+        if (this._isHorizontal)
             adjustment = this._scrollView.get_hscroll_bar().get_adjustment();
-            needscroll = actor.get_width() < actor.get_preferred_width(-1)[1];
-        } else {
+        else
             adjustment = this._scrollView.get_vscroll_bar().get_adjustment();
-            needscroll = actor.get_height() < actor.get_preferred_height(-1)[1];
-        }
-
-        // If scroll is not needed, either because icon are set to be resized or
-        // the space available is enough, let the scroll event propagate.
-        if (!needscroll)
-          return Clutter.EVENT_PROPAGATE;
 
         let increment = adjustment.step_increment;
 
@@ -1307,6 +1318,7 @@ Signals.addSignalMethods(myDash.prototype);
  *
  * - Pass settings to the constructor and bind settings changes
  * - Apply a css class based on the number of windows of each application (#N);
+ * - Draw a dot for each window of the application based on the default "dot" style which is hidden (#N);
  *   a class of the form "running#N" is applied to the AppWellIcon actor.
  *   like the original .running one.
  * - add a .focused style to the focused app
@@ -1337,7 +1349,7 @@ const myAppIcon = new Lang.Class({
     _init: function(settings, app, iconParams, onActivateOverride) {
 
         this._dtdSettings = settings;
-        this._maxN =4;
+        this._nWindows = 0;
 
         this.parent(app, iconParams, onActivateOverride);
 
@@ -1355,6 +1367,22 @@ const myAppIcon = new Lang.Class({
                                                 Lang.bind(this,
                                                           this._onFocusAppChanged));
 
+        this._dots = null;
+
+        let keys = ['apply-custom-theme',
+                    'custom-theme-running-dots',
+                   'custom-theme-customize-running-dots',
+                   'custom-theme-running-dots-color',
+                   'custom-theme-running-dots-border-color',
+                   'custom-theme-running-dots-border-width'];
+
+        keys.forEach(function(key){
+          this._dtdSettings.connect('changed::'+key,
+                                 Lang.bind(this, this._toggleDots)
+          );
+        }, this );
+
+        this._toggleDots();
     },
 
     _onDestroy: function() {
@@ -1395,8 +1423,44 @@ const myAppIcon = new Lang.Class({
 
     },
 
-    _updateRunningStyle: function() {
+    _toggleDots: function() {
 
+        if ( this._dtdSettings.get_boolean('custom-theme-running-dots')
+             || this._dtdSettings.get_boolean('apply-custom-theme') )
+            this._showDots();
+        else
+            this._hideDots();
+    },
+
+    _showDots: function() {
+        // I use opacity to hide the default dot because the show/hide function
+        // are used by the parent class.
+        this._dot.opacity = 0;
+
+        // Just update style if dots already exist
+        if (this._dots) {
+            this._updateCounterClass();
+            return;
+        }
+
+        this._dots = new St.DrawingArea({x_expand: true, y_expand: true});
+        this._dots.connect('repaint', Lang.bind(this,
+            function() {
+                    this._drawCircles(this._dots, getPosition(this._dtdSettings));
+            }));
+        this._iconContainer.add_child(this._dots);
+        this._updateCounterClass();
+
+    },
+
+    _hideDots: function() {
+        this._dot.opacity=255;
+        if (this._dots)
+            this._dots.destroy()
+        this._dots = null;
+    },
+
+    _updateRunningStyle: function() {
         this.parent();
         this._updateCounterClass();
     },
@@ -1507,19 +1571,94 @@ const myAppIcon = new Lang.Class({
 
     _updateCounterClass: function() {
 
-        let n = getAppInterestingWindows(this.app).length;
+        let maxN = 4;
+        this._nWindows = Math.min(getAppInterestingWindows(this.app).length, maxN);
 
-        if(n>this._maxN)
-             n = this._maxN;
-
-        for(let i = 1; i<=this._maxN; i++){
+        for(let i = 1; i<=maxN; i++){
             let className = 'running'+i;
-            if(i!=n)
+            if(i!=this._nWindows)
                 this.actor.remove_style_class_name(className);
             else
                 this.actor.add_style_class_name(className);
         }
+
+        if (this._dots)
+            this._dots.queue_repaint();
+    },
+
+    _drawCircles: function(area, side) {
+
+        let borderColor, borderWidth, bodyColor;
+
+        if (!this._dtdSettings.get_boolean('apply-custom-theme')
+            && this._dtdSettings.get_boolean('custom-theme-running-dots')
+            && this._dtdSettings.get_boolean('custom-theme-customize-running-dots')) {
+            borderColor = Clutter.color_from_string(this._dtdSettings.get_string('custom-theme-running-dots-border-color'))[1];
+            borderWidth = this._dtdSettings.get_int('custom-theme-running-dots-border-width');
+            bodyColor =  Clutter.color_from_string(this._dtdSettings.get_string('custom-theme-running-dots-color'))[1];
+        } else {
+            // Re-use the style - background color, and border width and color -
+            // of the default dot
+            let themeNode = this._dot.get_theme_node();
+            borderColor = themeNode.get_border_color(side);
+            borderWidth = themeNode.get_border_width(side);
+            bodyColor = themeNode.get_background_color();
+        }
+
+        let [width, height] = area.get_surface_size();
+        let cr = area.get_context();
+
+        // Draw the required numbers of dots
+        let radius = width/22 - borderWidth/2;
+        radius = Math.max(radius, borderWidth/4+1);
+        let padding = 0; // distance from the margin
+        let spacing = radius + borderWidth; // separation between the dots
+        let n = this._nWindows;
+
+        cr.setLineWidth(borderWidth);
+        Clutter.cairo_set_source_color(cr, borderColor);
+
+        switch (side) {
+        case St.Side.TOP:
+            cr.translate((width - (2*n)*radius - (n-1)*spacing)/2, padding);
+            for (let i=0; i<n;i++) {
+                cr.newSubPath();
+                cr.arc((2*i+1)*radius + i*spacing, radius + borderWidth/2, radius, 0, 2*Math.PI);
+            }
+            break;
+
+        case St.Side.BOTTOM:
+            cr.translate((width - (2*n)*radius - (n-1)*spacing)/2, height- padding- 2*radius);
+            for (let i=0; i<n;i++) {
+                cr.newSubPath();
+                cr.arc((2*i+1)*radius + i*spacing, radius + borderWidth/2, radius, 0, 2*Math.PI);
+            }
+            break;
+
+        case St.Side.LEFT:
+            cr.translate(padding, (height - (2*n)*radius - (n-1)*spacing)/2);
+            for (let i=0; i<n;i++) {
+                cr.newSubPath();
+                cr.arc(radius + borderWidth/2, (2*i+1)*radius + i*spacing, radius, 0, 2*Math.PI);
+            }
+            break;
+
+        case St.Side.RIGHT:
+            cr.translate(width - padding- 2*radius, (height - (2*n)*radius - (n-1)*spacing)/2);
+            for (let i=0; i<n;i++) {
+                cr.newSubPath();
+                cr.arc(radius + borderWidth/2, (2*i+1)*radius + i*spacing, radius, 0, 2*Math.PI);
+            }
+            break;
+        }
+
+        cr.strokePreserve();
+
+        Clutter.cairo_set_source_color(cr, bodyColor);
+        cr.fill();
+        cr.$dispose();
     }
+
 });
 
 function minimizeWindow(app, param){
