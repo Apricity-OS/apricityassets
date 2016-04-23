@@ -2,7 +2,7 @@
 
 _pkgname='Apricity Assets'
 pkgname=apricityassets
-pkgver=0.2.7
+pkgver=0.2.8
 pkgrel=1
 pkgdesc='Assets for Apricity OS'
 arch=(any)
