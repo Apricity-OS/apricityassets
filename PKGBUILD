@@ -10,7 +10,7 @@ license=(GPL)
 url="https://github.com/Apricity-OS/apricityassets"
 depends=('kdebase-runtime' 'icedtea-web')
 source=("apricityassets.tar.gz")
-sha256sums=('2438a1f3e30fa86a5ce9cb82f1937ea7bea08c0f39c6b25cdde1c7b5c87c0bd4')
+sha256sums=('e452e02dab4d7a1206de7522b4519714a41937aa73a3fd3d32f022a34e09f9df')
 install=apricityassets.install
 
 package() {
