@@ -2,7 +2,7 @@
 
 _pkgname='Apricity Assets'
 pkgname=apricityassets
-pkgver=0.2.9
+pkgver=0.2.10
 pkgrel=1
 pkgdesc='Assets for Apricity OS'
 arch=(any)
@@ -10,7 +10,7 @@ license=(GPL)
 url="https://github.com/Apricity-OS/apricityassets"
 depends=('kdebase-runtime' 'icedtea-web')
 source=("apricityassets.tar.gz")
-sha256sums=('e452e02dab4d7a1206de7522b4519714a41937aa73a3fd3d32f022a34e09f9df')
+sha256sums=('3ed0aebe0a4035e5d8176517be46a898eb892013d435a8ab857806cbc06036e4')
 install=apricityassets.install
 
 package() {
