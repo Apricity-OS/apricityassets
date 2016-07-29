@@ -15,3 +15,5 @@ getent passwd | while IFS=: read -r name password uid gid gecos home shell; do
         *) sudo -u ${name} freezedry --load /etc/freezedry/default.toml --user;;
     esac
 done
+
+freezedry --load /etc/freezedry/default.toml --root
