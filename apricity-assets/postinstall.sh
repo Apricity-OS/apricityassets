@@ -16,4 +16,4 @@ getent passwd | while IFS=: read -r name password uid gid gecos home shell; do
     esac
 done
 
-freezedry --load /etc/freezedry/default.toml --root
+yes | freezedry --load /etc/freezedry/default.toml --root
