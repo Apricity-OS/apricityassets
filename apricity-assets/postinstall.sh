@@ -17,3 +17,4 @@ getent passwd | while IFS=: read -r name password uid gid gecos home shell; do
 done
 
 yes | freezedry --load /etc/freezedry/default.toml --root
+sed -i 's/auth		sufficient	pam_wheel.so trust use_uid/#auth		sufficient	pam_wheel.so trust use_uid/g' /etc/pam.d/su
